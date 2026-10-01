@@ -26,8 +26,13 @@
 </p>
 
 <p align="center">
-  🌐 <strong>Live Demo:</strong> <a "https://dermasenseai.vercel.app/"><ai-skin-specialist.vercel.app</code></a>
-  <br/>
+  <a href="https://dermasenseai.vercel.app/" target="_blank">
+    <img src="https://img.shields.io/badge/🌐%20Live%20Demo-Click%20Here-0051d5?style=for-the-badge&logo=vercel&logoColor=white" alt="Live Demo"/>
+  </a>
+</p>
+
+<p align="center">
+  🚀 <strong>Live Demo:</strong> <a href="https://dermasenseai.vercel.app/" target="_blank"><code>https://dermasenseai.vercel.app/</code></a>
 </p>
 
 ---
