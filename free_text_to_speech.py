@@ -17,7 +17,7 @@ def text_to_speech_with_gtts(input_text, output_filepath):
         if os_name == "Darwin":  # macOS
             subprocess.run(['afplay', output_filepath])
         elif os_name == "Windows":  # Windows
-            subprocess.run(['powershell', '-c', f'(New-Object Media.SoundPlayer "{output_filepath}").PlaySync();'])
+            os.startfile(output_filepath)
         elif os_name == "Linux":  # Linux
             subprocess.run(['aplay', output_filepath])  # Alternative: use 'mpg123' or 'ffplay'
         else:

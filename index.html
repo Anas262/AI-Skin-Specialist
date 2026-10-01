@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html class="light" lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>AI Skin Specialist | Medical Consultation Dashboard</title>
+  
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-container-lowest": "#ffffff",
+            "surface-container-low": "#f2f4f6",
+            "surface-container": "#eceef0",
+            "surface-container-high": "#e6e8ea",
+            "surface-container-highest": "#e0e3e5",
+            "surface": "#f7f9fb",
+            "on-surface": "#191c1e",
+            "on-surface-variant": "#45464d",
+            "outline": "#76777d",
+            "outline-variant": "#c6c6cd",
+            "primary": "#000000",
+            "secondary": "#0051d5",
+            "secondary-container": "#316bf3",
+            "on-secondary-container": "#fefcff",
+            "secondary-fixed": "#dbe1ff",
+            "on-secondary-fixed-variant": "#003ea8",
+            "error": "#ba1a1a",
+            "error-container": "#ffdad6"
+          },
+          borderRadius: {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem"
+          },
+          fontFamily: {
+            sans: ["Inter", "system-ui", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .mic-recording {
+      animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+    .wave-bar {
+      display: inline-block;
+      width: 4px;
+      height: 16px;
+      border-radius: 2px;
+      background: #ef4444;
+      animation: wave 1s ease-in-out infinite;
+    }
+    .wave-bar:nth-child(2) { animation-delay: 0.15s; height: 24px; }
+    .wave-bar:nth-child(3) { animation-delay: 0.3s; height: 32px; }
+    .wave-bar:nth-child(4) { animation-delay: 0.45s; height: 20px; }
+    .wave-bar:nth-child(5) { animation-delay: 0.6s; height: 12px; }
+    @keyframes wave {
+      0%, 100% { transform: scaleY(0.4); }
+      50% { transform: scaleY(1); }
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen flex flex-col antialiased">
+
+  <!-- Top AppBar -->
+  <header class="fixed top-0 w-full z-50 bg-surface-container-lowest/90 backdrop-blur-md border-b border-outline-variant">
+    <div class="max-w-7xl mx-auto px-4 md:px-8 h-20 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-secondary-container flex items-center justify-center text-white shadow-md">
+          <span class="material-symbols-outlined text-2xl">dermatology</span>
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-bold tracking-tight text-on-surface">AI Skin Specialist</h1>
+          <p class="text-xs text-on-surface-variant font-medium">Multimodal Dermatology Consultation</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <div id="api-status-badge" class="flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span>System Ready</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-grow pt-28 pb-16 px-4 md:px-8 max-w-7xl mx-auto w-full">
+    <!-- Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- Left Column: Patient Input -->
+      <section class="lg:col-span-5 flex flex-col gap-5">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-secondary">clinical_notes</span>
+          <h2 class="text-xl font-bold text-on-surface">Patient Input</h2>
+        </div>
+
+        <!-- Voice & Description Box -->
+        <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-6 shadow-sm">
+          <div class="flex justify-between items-center mb-3">
+            <label class="text-sm font-semibold text-on-surface">Describe your skin concern</label>
+            <span class="text-xs font-medium text-outline">Voice or Text</span>
+          </div>
+
+          <!-- Mic Box Area -->
+          <div id="mic-container" class="relative flex flex-col items-center justify-center p-6 border-2 border-dashed border-outline-variant rounded-xl bg-surface-container-low transition-all">
+            
+            <!-- Idle State -->
+            <div id="mic-idle-state" class="flex flex-col items-center">
+              <button id="btn-start-record" type="button" class="w-16 h-16 bg-secondary text-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-3xl">mic</span>
+              </button>
+              <p class="mt-3 text-sm font-medium text-on-surface">Tap to record voice description</p>
+              <p class="text-xs text-on-surface-variant">Uses your browser microphone</p>
+            </div>
+
+            <!-- Recording Active State -->
+            <div id="mic-recording-state" class="hidden flex flex-col items-center">
+              <button id="btn-stop-record" type="button" class="w-16 h-16 bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg mic-recording cursor-pointer hover:bg-red-700 transition-all">
+                <span class="material-symbols-outlined text-3xl">stop</span>
+              </button>
+              <div class="flex items-center gap-1.5 mt-3 h-8">
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+                <div class="wave-bar"></div>
+              </div>
+              <p id="recording-timer" class="text-sm font-bold text-red-600 mt-1">Recording: 00:00</p>
+              <p class="text-xs text-on-surface-variant">Click stop when finished speaking</p>
+            </div>
+
+            <!-- Recorded Preview State -->
+            <div id="mic-recorded-state" class="hidden w-full flex flex-col items-center gap-3">
+              <div class="flex items-center gap-2 text-emerald-700 font-medium text-xs bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+                <span class="material-symbols-outlined text-sm">check_circle</span>
+                <span>Audio Captured</span>
+              </div>
+              <audio id="audio-preview" controls class="w-full h-10 mt-1"></audio>
+              <div class="flex gap-2">
+                <button id="btn-rerecord" type="button" class="text-xs font-semibold text-secondary hover:underline flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">refresh</span> Re-record
+                </button>
+                <span class="text-outline-variant">|</span>
+                <button id="btn-delete-audio" type="button" class="text-xs font-semibold text-error hover:underline flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm">delete</span> Clear
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Or Upload Audio File / Text Fallback -->
+          <div class="mt-4 pt-4 border-t border-outline-variant/60 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+              <label for="text-input" class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">Or type symptom details</label>
+              <label for="audio-file-input" class="text-xs font-semibold text-secondary hover:underline cursor-pointer flex items-center gap-1">
+                <span class="material-symbols-outlined text-sm">upload_file</span> Upload audio file
+              </label>
+              <input id="audio-file-input" type="file" accept="audio/*" class="hidden"/>
+            </div>
+            <textarea id="text-input" rows="2" placeholder="e.g. It started 4 days ago on my arm, itches at night..." class="w-full px-3 py-2 text-sm border border-outline-variant rounded-xl bg-surface-container-low focus:bg-white focus:outline-none focus:ring-2 focus:ring-secondary/50 text-on-surface resize-none"></textarea>
+          </div>
+        </div>
+
+        <!-- Bento Grid: Image & Video Upload -->
+        <div class="grid grid-cols-2 gap-4">
+          
+          <!-- Image Upload Card -->
+          <div id="image-dropzone" class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 shadow-sm hover:border-secondary transition-all cursor-pointer group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div class="flex justify-between items-start mb-3">
+                <span class="material-symbols-outlined text-secondary group-hover:scale-110 transition-transform">photo_camera</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider bg-secondary-fixed text-on-secondary-fixed-variant px-2 py-0.5 rounded-full">Required</span>
+              </div>
+              <h3 class="text-sm font-bold text-on-surface">Skin Image</h3>
+              <p class="text-xs text-on-surface-variant mt-1 leading-tight">Close-up photo of the affected skin</p>
+            </div>
+
+            <!-- Preview or Empty Placeholder -->
+            <div id="image-preview-container" class="mt-3 hidden relative rounded-lg overflow-hidden border border-outline-variant">
+              <img id="image-preview" src="" alt="Skin Preview" class="w-full h-24 object-cover"/>
+              <button id="btn-remove-image" type="button" class="absolute top-1 right-1 bg-black/60 hover:bg-black text-white p-1 rounded-full text-xs">
+                <span class="material-symbols-outlined text-sm block">close</span>
+              </button>
+            </div>
+
+            <div id="image-placeholder" class="mt-3 text-xs text-secondary font-medium flex items-center gap-1">
+              <span>Choose photo</span>
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </div>
+            <input id="image-file-input" type="file" accept="image/*" class="hidden"/>
+          </div>
+
+          <!-- Video Upload Card -->
+          <div id="video-dropzone" class="bg-surface-container-lowest rounded-2xl border border-outline-variant p-5 shadow-sm hover:border-secondary transition-all cursor-pointer group flex flex-col justify-between relative overflow-hidden">
+            <div>
+              <div class="flex justify-between items-start mb-3">
+                <span class="material-symbols-outlined text-secondary group-hover:scale-110 transition-transform">videocam</span>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-outline bg-surface-container-high px-2 py-0.5 rounded-full">Optional</span>
+              </div>
+              <h3 class="text-sm font-bold text-on-surface">Skin Video</h3>
+              <p class="text-xs text-on-surface-variant mt-1 leading-tight">Auto-extracts frame in browser</p>
+            </div>
+
+            <!-- Preview or Empty Placeholder -->
+            <div id="video-preview-container" class="mt-3 hidden relative rounded-lg overflow-hidden border border-outline-variant">
+              <img id="video-frame-preview" src="" alt="Extracted Video Frame" class="w-full h-24 object-cover"/>
+              <span class="absolute bottom-1 left-1 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">Frame Captured</span>
+              <button id="btn-remove-video" type="button" class="absolute top-1 right-1 bg-black/60 hover:bg-black text-white p-1 rounded-full text-xs">
+                <span class="material-symbols-outlined text-sm block">close</span>
+              </button>
+            </div>
+
+            <div id="video-placeholder" class="mt-3 text-xs text-secondary font-medium flex items-center gap-1">
+              <span>Upload clip</span>
+              <span class="material-symbols-outlined text-sm">arrow_forward</span>
+            </div>
+            <input id="video-file-input" type="file" accept="video/*" class="hidden"/>
+          </div>
+
+        </div>
+
+        <!-- Hidden canvas & video element for browser frame extraction -->
+        <video id="hidden-video" class="hidden" playsinline muted></video>
+        <canvas id="hidden-canvas" class="hidden"></canvas>
+
+        <!-- Analyze Button -->
+        <button id="btn-analyze" type="button" class="w-full bg-secondary-container hover:bg-secondary text-white font-semibold text-base py-4 rounded-2xl shadow-lg hover:shadow-xl active:scale-[0.99] transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+          <span class="material-symbols-outlined">query_stats</span>
+          <span id="btn-analyze-text">Analyze Concern</span>
+        </button>
+
+        <!-- Notice -->
+        <div class="flex items-start gap-3 bg-secondary-fixed/40 p-4 rounded-xl border border-secondary-fixed">
+          <span class="material-symbols-outlined text-secondary text-lg mt-0.5">info</span>
+          <p class="text-xs text-on-secondary-fixed-variant leading-relaxed font-medium">
+            For accurate analysis, ensure the photo has sharp focus and natural lighting. Guidance is informational and does not replace in-person dermatological care.
+          </p>
+        </div>
+
+      </section>
+
+      <!-- Right Column: Doctor Response -->
+      <section class="lg:col-span-7 flex flex-col gap-5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-secondary">smart_toy</span>
+            <h2 class="text-xl font-bold text-on-surface">Doctor Response</h2>
+          </div>
+          <button id="btn-new-consult" type="button" class="hidden text-xs font-semibold text-secondary hover:underline flex items-center gap-1">
+            <span class="material-symbols-outlined text-sm">restart_alt</span> New Consultation
+          </button>
+        </div>
+
+        <!-- Response Canvas -->
+        <div id="response-canvas" class="bg-surface-container-lowest min-h-[540px] rounded-2xl border border-outline-variant shadow-sm relative overflow-hidden flex flex-col p-6">
+          
+          <!-- State 1: Ready / Empty -->
+          <div id="empty-state" class="flex-grow flex flex-col items-center justify-center p-8 text-center my-auto">
+            <div class="w-20 h-20 bg-surface-container-low rounded-full flex items-center justify-center mb-4 text-outline">
+              <span class="material-symbols-outlined text-4xl">stethoscope</span>
+            </div>
+            <h3 class="text-lg font-bold text-on-surface mb-2">Ready for Consultation</h3>
+            <p class="text-sm text-on-surface-variant max-w-sm">
+              Record your symptoms and provide a photo of the affected skin area on the left, then click <strong>Analyze Concern</strong>.
+            </p>
+          </div>
+
+          <!-- State 2: Loading State -->
+          <div id="loading-state" class="hidden flex-grow flex flex-col items-center justify-center p-8 text-center my-auto">
+            <div class="relative w-16 h-16 mb-5">
+              <div class="w-16 h-16 rounded-full border-4 border-secondary/20 border-t-secondary animate-spin"></div>
+              <span class="material-symbols-outlined absolute inset-0 flex items-center justify-center text-secondary text-2xl">neurology</span>
+            </div>
+            <h3 id="loading-title" class="text-lg font-bold text-on-surface mb-2">Consulting AI Specialist...</h3>
+            <p id="loading-subtext" class="text-sm text-on-surface-variant max-w-xs animate-pulse">
+              Transcribing audio and analyzing skin visual features...
+            </p>
+          </div>
+
+          <!-- State 3: Result State -->
+          <div id="result-state" class="hidden flex flex-col gap-6">
+            
+            <!-- Patient Speech Transcript -->
+            <div class="space-y-2">
+              <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-sm text-outline">record_voice_over</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-outline">Patient Transcript</span>
+              </div>
+              <div id="result-transcript" class="bg-surface-container-low rounded-xl p-4 text-sm text-on-surface-variant italic border border-outline-variant/50">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- AI Specialist Guidance -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-secondary">medical_services</span>
+                  <span class="text-base font-bold text-secondary">Doctor's Clinical Guidance</span>
+                </div>
+                <div class="bg-secondary/10 text-secondary text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1">
+                  <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">verified</span>
+                  <span>AI Review</span>
+                </div>
+              </div>
+              <div id="result-guidance" class="text-on-surface text-base leading-relaxed bg-surface-container-lowest p-4 rounded-xl border border-secondary/20 bg-secondary/[0.02]">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- Doctor Audio Player -->
+            <div id="audio-player-card" class="mt-auto border-t border-outline-variant pt-5">
+              <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                  <span class="material-symbols-outlined text-secondary">spatial_audio</span>
+                  <span class="text-sm font-bold text-on-surface">Doctor Voice Guidance</span>
+                </div>
+                <span class="text-xs text-on-surface-variant font-medium">Deepgram Aura HD</span>
+              </div>
+
+              <div class="bg-surface-container-low rounded-2xl p-3 border border-outline-variant flex items-center gap-3">
+                <button id="btn-play-doctor" type="button" class="w-12 h-12 bg-secondary text-white rounded-full flex items-center justify-center hover:bg-secondary-container active:scale-95 transition-all shadow cursor-pointer">
+                  <span id="play-icon" class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+                </button>
+                <div class="flex-grow flex flex-col justify-center gap-1">
+                  <div class="flex justify-between text-xs text-on-surface-variant font-medium">
+                    <span id="audio-current-time">0:00</span>
+                    <span id="audio-duration">0:00</span>
+                  </div>
+                  <input id="audio-seek-bar" type="range" min="0" max="100" value="0" class="w-full accent-secondary h-1.5 bg-outline-variant rounded-lg cursor-pointer"/>
+                </div>
+              </div>
+              <audio id="doctor-audio" class="hidden"></audio>
+            </div>
+
+            <!-- Medical Disclaimer Banner -->
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-start gap-2 text-amber-900 text-xs">
+              <span class="material-symbols-outlined text-amber-700 text-base mt-0.5">warning</span>
+              <span>This guidance is AI-generated for informational awareness. Always consult a board-certified dermatologist for formal diagnosis or worsening symptoms.</span>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Privacy & Security Badge -->
+        <div class="flex items-center justify-center gap-4 text-xs text-on-surface-variant opacity-80 pt-2">
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-secondary text-base" style="font-variation-settings: 'FILL' 1;">lock</span>
+            <span>Private & Ephemeral</span>
+          </div>
+          <span class="text-outline-variant">•</span>
+          <div class="flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-secondary text-base" style="font-variation-settings: 'FILL' 1;">bolt</span>
+            <span>Powered by Groq & Deepgram</span>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Error Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 max-w-md bg-red-600 text-white px-5 py-3.5 rounded-xl shadow-xl z-50 flex items-center gap-3 transform translate-y-24 opacity-0 transition-all duration-300">
+    <span class="material-symbols-outlined text-xl">error</span>
+    <span id="toast-message" class="text-sm font-medium">An error occurred.</span>
+    <button onclick="hideToast()" class="ml-auto text-white/80 hover:text-white">
+      <span class="material-symbols-outlined text-base">close</span>
+    </button>
+  </div>
+
+  <!-- Application Logic -->
+  <script>
+    // State variables
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let audioBlob = null;
+    let recordInterval = null;
+    let recordSeconds = 0;
+
+    let selectedImageFile = null;
+    let extractedVideoFrameBlob = null;
+
+    // DOM Elements
+    const btnStartRecord = document.getElementById('btn-start-record');
+    const btnStopRecord = document.getElementById('btn-stop-record');
+    const btnRerecord = document.getElementById('btn-rerecord');
+    const btnDeleteAudio = document.getElementById('btn-delete-audio');
+    const micIdleState = document.getElementById('mic-idle-state');
+    const micRecordingState = document.getElementById('mic-recording-state');
+    const micRecordedState = document.getElementById('mic-recorded-state');
+    const recordingTimer = document.getElementById('recording-timer');
+    const audioPreview = document.getElementById('audio-preview');
+    const audioFileInput = document.getElementById('audio-file-input');
+    const textInput = document.getElementById('text-input');
+
+    const imageDropzone = document.getElementById('image-dropzone');
+    const imageFileInput = document.getElementById('image-file-input');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+    const imagePreview = document.getElementById('image-preview');
+    const imagePlaceholder = document.getElementById('image-placeholder');
+    const btnRemoveImage = document.getElementById('btn-remove-image');
+
+    const videoDropzone = document.getElementById('video-dropzone');
+    const videoFileInput = document.getElementById('video-file-input');
+    const videoPreviewContainer = document.getElementById('video-preview-container');
+    const videoFramePreview = document.getElementById('video-frame-preview');
+    const videoPlaceholder = document.getElementById('video-placeholder');
+    const btnRemoveVideo = document.getElementById('btn-remove-video');
+    const hiddenVideo = document.getElementById('hidden-video');
+    const hiddenCanvas = document.getElementById('hidden-canvas');
+
+    const btnAnalyze = document.getElementById('btn-analyze');
+    const btnAnalyzeText = document.getElementById('btn-analyze-text');
+    const emptyState = document.getElementById('empty-state');
+    const loadingState = document.getElementById('loading-state');
+    const resultState = document.getElementById('result-state');
+    const resultTranscript = document.getElementById('result-transcript');
+    const resultGuidance = document.getElementById('result-guidance');
+    const btnNewConsult = document.getElementById('btn-new-consult');
+
+    const doctorAudio = document.getElementById('doctor-audio');
+    const btnPlayDoctor = document.getElementById('btn-play-doctor');
+    const playIcon = document.getElementById('play-icon');
+    const audioSeekBar = document.getElementById('audio-seek-bar');
+    const audioCurrentTime = document.getElementById('audio-current-time');
+    const audioDuration = document.getElementById('audio-duration');
+
+    const toast = document.getElementById('toast');
+    const toastMessage = document.getElementById('toast-message');
+
+    // Toast helper
+    function showToast(msg) {
+      toastMessage.textContent = msg;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(hideToast, 5000);
+    }
+    function hideToast() {
+      toast.classList.add('translate-y-24', 'opacity-0');
+    }
+
+    // Health check on load
+    fetch('/api/health')
+      .then(res => res.json())
+      .then(data => {
+        const badge = document.getElementById('api-status-badge');
+        if (data.status === 'healthy') {
+          badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span><span>System Online</span>`;
+        }
+      })
+      .catch(() => {
+        const badge = document.getElementById('api-status-badge');
+        badge.className = "flex items-center gap-2 text-xs font-semibold px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200";
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Local Standby</span>`;
+      });
+
+    // 1. Microphone Recording Logic
+    btnStartRecord.addEventListener('click', async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+
+        mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunks.push(event.data);
+          }
+        };
+
+        mediaRecorder.onstop = () => {
+          audioBlob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+          audioPreview.src = URL.createObjectURL(audioBlob);
+          
+          micRecordingState.classList.add('hidden');
+          micRecordedState.classList.remove('hidden');
+          stream.getTracks().forEach(track => track.stop());
+        };
+
+        mediaRecorder.start();
+        recordSeconds = 0;
+        recordingTimer.textContent = "Recording: 00:00";
+        recordInterval = setInterval(() => {
+          recordSeconds++;
+          const mins = String(Math.floor(recordSeconds / 60)).padStart(2, '0');
+          const secs = String(recordSeconds % 60).padStart(2, '0');
+          recordingTimer.textContent = `Recording: ${mins}:${secs}`;
+        }, 1000);
+
+        micIdleState.classList.add('hidden');
+        micRecordingState.classList.remove('hidden');
+      } catch (err) {
+        showToast("Microphone access was denied or is unavailable in your browser.");
+      }
+    });
+
+    btnStopRecord.addEventListener('click', () => {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        clearInterval(recordInterval);
+        mediaRecorder.stop();
+      }
+    });
+
+    function resetAudioState() {
+      audioBlob = null;
+      audioChunks = [];
+      clearInterval(recordInterval);
+      audioPreview.src = "";
+      micRecordedState.classList.add('hidden');
+      micRecordingState.classList.add('hidden');
+      micIdleState.classList.remove('hidden');
+      audioFileInput.value = "";
+    }
+
+    btnRerecord.addEventListener('click', resetAudioState);
+    btnDeleteAudio.addEventListener('click', resetAudioState);
+
+    audioFileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        audioBlob = e.target.files[0];
+        audioPreview.src = URL.createObjectURL(audioBlob);
+        micIdleState.classList.add('hidden');
+        micRecordingState.classList.add('hidden');
+        micRecordedState.classList.remove('hidden');
+      }
+    });
+
+    // 2. Image Selection Logic
+    imageDropzone.addEventListener('click', (e) => {
+      if (e.target.closest('#btn-remove-image')) return;
+      imageFileInput.click();
+    });
+
+    imageFileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        selectedImageFile = e.target.files[0];
+        imagePreview.src = URL.createObjectURL(selectedImageFile);
+        imagePreviewContainer.classList.remove('hidden');
+        imagePlaceholder.classList.add('hidden');
+      }
+    });
+
+    btnRemoveImage.addEventListener('click', (e) => {
+      e.stopPropagation();
+      selectedImageFile = null;
+      imageFileInput.value = "";
+      imagePreview.src = "";
+      imagePreviewContainer.classList.add('hidden');
+      imagePlaceholder.classList.remove('hidden');
+    });
+
+    // 3. Video Selection & Client-Side Frame Extraction Logic
+    videoDropzone.addEventListener('click', (e) => {
+      if (e.target.closest('#btn-remove-video')) return;
+      videoFileInput.click();
+    });
+
+    videoFileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        const videoUrl = URL.createObjectURL(file);
+        
+        hiddenVideo.src = videoUrl;
+        hiddenVideo.load();
+        
+        hiddenVideo.onloadeddata = () => {
+          hiddenVideo.currentTime = Math.min(1.0, hiddenVideo.duration ? hiddenVideo.duration / 2 : 1.0);
+        };
+
+        hiddenVideo.onseeked = () => {
+          hiddenCanvas.width = hiddenVideo.videoWidth || 640;
+          hiddenCanvas.height = hiddenVideo.videoHeight || 480;
+          const ctx = hiddenCanvas.getContext('2d');
+          ctx.drawImage(hiddenVideo, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+          
+          hiddenCanvas.toBlob((blob) => {
+            extractedVideoFrameBlob = blob;
+            videoFramePreview.src = URL.createObjectURL(blob);
+            videoPreviewContainer.classList.remove('hidden');
+            videoPlaceholder.classList.add('hidden');
+          }, 'image/jpeg', 0.85);
+        };
+      }
+    });
+
+    btnRemoveVideo.addEventListener('click', (e) => {
+      e.stopPropagation();
+      extractedVideoFrameBlob = null;
+      videoFileInput.value = "";
+      videoFramePreview.src = "";
+      videoPreviewContainer.classList.add('hidden');
+      videoPlaceholder.classList.remove('hidden');
+    });
+
+    // 4. Submit & Analyze
+    btnAnalyze.addEventListener('click', async () => {
+      const textVal = textInput.value.trim();
+
+      // Validation
+      if (!audioBlob && !textVal) {
+        showToast("Please record a voice description or type your skin concern.");
+        return;
+      }
+
+      // Check for image or extracted video frame
+      let imageToSend = selectedImageFile;
+      if (!imageToSend && extractedVideoFrameBlob) {
+        imageToSend = extractedVideoFrameBlob;
+      }
+
+      if (!imageToSend) {
+        showToast("Visual inspection requires a skin photo or video clip.");
+        return;
+      }
+
+      // Start Loading UI
+      btnAnalyze.disabled = true;
+      btnAnalyzeText.textContent = "Analyzing Concern...";
+      emptyState.classList.add('hidden');
+      resultState.classList.add('hidden');
+      loadingState.classList.remove('hidden');
+
+      // Scroll to response on mobile
+      if (window.innerWidth < 1024) {
+        document.getElementById('response-canvas').scrollIntoView({ behavior: 'smooth' });
+      }
+
+      const formData = new FormData();
+      if (selectedImageFile) {
+        formData.append('image', selectedImageFile, selectedImageFile.name);
+      } else if (extractedVideoFrameBlob) {
+        formData.append('image', extractedVideoFrameBlob, 'video_frame.jpg');
+      }
+
+      if (audioBlob) {
+        const audioName = audioBlob.name || 'patient_voice.webm';
+        formData.append('audio', audioBlob, audioName);
+      }
+
+      if (textVal) {
+        formData.append('text', textVal);
+      }
+
+      try {
+        const response = await fetch('/api/consult', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.detail || `Server returned status ${response.status}`);
+        }
+
+        const data = await response.json();
+        
+        // Populate results
+        resultTranscript.textContent = `"${data.transcript}"`;
+        resultGuidance.textContent = data.guidance;
+
+        // Populate audio
+        if (data.audio) {
+          doctorAudio.src = data.audio;
+          document.getElementById('audio-player-card').classList.remove('hidden');
+          // Autoplay doctor audio
+          doctorAudio.play().catch(() => {
+            // Autoplay policy might require user gesture
+          });
+        } else {
+          document.getElementById('audio-player-card').classList.add('hidden');
+        }
+
+        loadingState.classList.add('hidden');
+        resultState.classList.remove('hidden');
+        btnNewConsult.classList.remove('hidden');
+
+      } catch (err) {
+        loadingState.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        showToast(err.message || "Failed to analyze concern. Please try again.");
+      } finally {
+        btnAnalyze.disabled = false;
+        btnAnalyzeText.textContent = "Analyze Concern";
+      }
+    });
+
+    // 5. Audio Player Controls
+    btnPlayDoctor.addEventListener('click', () => {
+      if (doctorAudio.paused) {
+        doctorAudio.play();
+      } else {
+        doctorAudio.pause();
+      }
+    });
+
+    doctorAudio.addEventListener('play', () => {
+      playIcon.textContent = "pause";
+    });
+
+    doctorAudio.addEventListener('pause', () => {
+      playIcon.textContent = "play_arrow";
+    });
+
+    doctorAudio.addEventListener('ended', () => {
+      playIcon.textContent = "play_arrow";
+      audioSeekBar.value = 0;
+      audioCurrentTime.textContent = "0:00";
+    });
+
+    doctorAudio.addEventListener('timeupdate', () => {
+      if (doctorAudio.duration) {
+        const pct = (doctorAudio.currentTime / doctorAudio.duration) * 100;
+        audioSeekBar.value = pct;
+        audioCurrentTime.textContent = formatTime(doctorAudio.currentTime);
+      }
+    });
+
+    doctorAudio.addEventListener('loadedmetadata', () => {
+      audioDuration.textContent = formatTime(doctorAudio.duration);
+    });
+
+    audioSeekBar.addEventListener('input', () => {
+      if (doctorAudio.duration) {
+        doctorAudio.currentTime = (audioSeekBar.value / 100) * doctorAudio.duration;
+      }
+    });
+
+    function formatTime(secs) {
+      if (isNaN(secs)) return "0:00";
+      const m = Math.floor(secs / 60);
+      const s = Math.floor(secs % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // 6. Reset Consultation
+    btnNewConsult.addEventListener('click', () => {
+      resetAudioState();
+      btnRemoveImage.click();
+      btnRemoveVideo.click();
+      textInput.value = "";
+      doctorAudio.pause();
+      doctorAudio.src = "";
+      resultState.classList.add('hidden');
+      btnNewConsult.classList.add('hidden');
+      emptyState.classList.remove('hidden');
+    });
+
+  </script>
+</body>
+</html>
