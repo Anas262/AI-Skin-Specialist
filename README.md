@@ -26,7 +26,7 @@
 </p>
 
 <p align="center">
-  🌐 <strong>Live Demo:</strong> <a href="[https://ai-skin-specialist.vercel.app](https://ai-skin-specialist-7da3-khananas82732-9750.vercel.app/)"><code>https://ai-skin-specialist.vercel.app</code></a>
+  🌐 <strong>Live Demo:</strong> <a href="]https://ai-skin-specialist.vercel.app](https://ai-skin-specialist-7da3-khananas82732-9750.vercel.app/"><code>https://ai-skin-specialist.vercel.app</code></a>
   <br/>
 
 </p>
