@@ -51,6 +51,9 @@ def encode_image(image_bytes: bytes) -> str:
 
 @app.get("/api/health")
 @app.get("/health")
+@app.get("/api/index.py")
+@app.get("/index.py")
+@app.get("/api")
 async def health_check():
     groq_configured = bool(os.environ.get("GROQ_API_KEY"))
     deepgram_configured = bool(os.environ.get("DEEPGRAM_API_KEY"))
@@ -66,6 +69,8 @@ async def health_check():
 
 @app.post("/api/consult")
 @app.post("/consult")
+@app.post("/api/index.py")
+@app.post("/index.py")
 async def consult(
     image: Optional[UploadFile] = File(None),
     audio: Optional[UploadFile] = File(None),
@@ -211,9 +216,10 @@ async def consult(
 
 
 # Enable local preview when running `uvicorn api.index:app`
-BASE_PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-PUBLIC_DIR = os.path.join(BASE_PROJECT_DIR, "public")
-if os.path.isdir(PUBLIC_DIR):
-    from fastapi.staticfiles import StaticFiles
+if not os.environ.get("VERCEL"):
+    BASE_PROJECT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    PUBLIC_DIR = os.path.join(BASE_PROJECT_DIR, "public")
+    if os.path.isdir(PUBLIC_DIR):
+        from fastapi.staticfiles import StaticFiles
 
-    app.mount("/", StaticFiles(directory=PUBLIC_DIR, html=True), name="static")
+        app.mount("/", StaticFiles(directory=PUBLIC_DIR, html=True), name="static")
